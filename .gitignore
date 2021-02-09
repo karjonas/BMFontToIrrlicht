@@ -1,0 +1,22 @@
+# Common cache files
+#
+.DS_Store
+._.DS_Store
+Thumbs.db
+
+# CMake generated files
+#
+CMakeFiles
+CMakeLists.txt.user
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+build
+
+# Emacs files 
+#
+*~
+.#*
+\#*\#
+\#*
+
