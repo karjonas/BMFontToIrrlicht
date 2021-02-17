@@ -79,6 +79,12 @@ struct TextureSize {
   int dimension = 0;
 };
 
+struct Size {
+  Size(int w, int h) : width(w), height(h) {}
+  int width = -1;
+  int height = -1;
+};
+
 std::tuple<int, int> max_char_size(const FntFile &fnt) {
   int x = 0;
   int y = 0;
@@ -111,13 +117,20 @@ TextureSize find_min_texture_size(const FntFile &fnt) {
 }
 
 void copy_image_rect(unsigned char *src_img, int src_x, int src_y,
-                     int src_width, unsigned char *dst_img, int dst_x,
-                     int dst_y, int dst_width, int width, int height) {
+                     Size src_size, unsigned char *dst_img, int dst_x,
+                     int dst_y, Size dst_size, int width, int height,
+                     int components) {
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      auto dst_idx = ((dst_y + y) * dst_width + (dst_x + x)) * 4;
-      auto src_idx = ((src_y + y) * src_width + (src_x + x)) * 4;
-      for (int i = 0; i < 4; i++)
+      auto dst_idx = ((dst_y + y) * dst_size.width + (dst_x + x)) * components;
+      auto src_idx = ((src_y + y) * src_size.width + (src_x + x)) * components;
+
+      if (src_y + y >= src_size.height || src_x + x >= src_size.width ||
+          dst_y + y >= dst_size.height || dst_x + x >= dst_size.width ||
+          dst_idx < 0 || src_idx < 0)
+        continue;
+
+      for (int i = 0; i < components; i++)
         dst_img[dst_idx + i] = src_img[src_idx + i];
     }
   }
@@ -239,19 +252,22 @@ void write_xml(const std::string &input, const std::string &output,
   int curr_x = 0;
   int curr_y = 0;
 
+  Size src_size = Size(src_width, src_height);
+  Size dst_size = Size(tex_size.dimension, tex_size.dimension);
+
   // Chars
   for (const auto &c : fnt.chars) {
 
     if (c.width != 0 && c.height != 0)
-      copy_image_rect(img_src_data, c.x, c.y, src_width, output_buffer.data(),
-                      curr_x, curr_y + c.yoffset, tex_size.dimension, c.width,
-                      c.height);
+      copy_image_rect(img_src_data, c.x, c.y, src_size, output_buffer.data(),
+                      curr_x, curr_y + c.yoffset, dst_size, c.width, c.height,
+                      src_components);
 
     // upper left (x,y) lower right (x,y)
     const std::array<int, 4> corners = {curr_x, curr_y, curr_x + c.width,
                                         curr_y + tex_size.char_height - 1};
     const int overhang = c.xadvance - c.width; // Padding after letter
-    const int underhang = 0; // Padding before letter
+    const int underhang = 0;                   // Padding before letter
 
     out_file << "  <c c=\"" << c.letter << "\" r=\"" << corners[0] << ","
              << corners[1] << "," << corners[2] << "," << corners[3]
@@ -270,9 +286,10 @@ void write_xml(const std::string &input, const std::string &output,
 
   std::cout << "Wrote xml font file: " << output << std::endl;
 
-  int result = stbi_write_png(dst_image_path.c_str(), tex_size.dimension,
-                              tex_size.dimension, 4, output_buffer.data(),
-                              tex_size.dimension * 4);
+  int result =
+      stbi_write_png(dst_image_path.c_str(), tex_size.dimension,
+                     tex_size.dimension, src_components, output_buffer.data(),
+                     tex_size.dimension * src_components);
   if (result != 1) {
     std::cout << "Could not write image file: " << output << std::endl;
   }
