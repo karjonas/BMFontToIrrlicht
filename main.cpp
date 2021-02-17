@@ -1,6 +1,9 @@
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <map>
 #include <sstream>
 #include <vector>
@@ -33,6 +36,28 @@ std::string erase_all(const std::string &str, char c) {
     if (str[i] != c)
       output += str[i];
   return output;
+}
+
+// trim from start (in place)
+void ltrim(std::string &s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+}
+
+// trim from end (in place)
+void rtrim(std::string &s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
+}
+
+// trim from both ends (in place)
+std::string trim(std::string s) {
+  ltrim(s);
+  rtrim(s);
+  return s;
 }
 
 std::vector<std::string> parse_words(const std::string &input) {
@@ -147,7 +172,7 @@ FntFile read_fnt(const std::string &filepath) {
 
   std::string line;
   while (std::getline(file, line)) {
-    auto words = utils::parse_words(line);
+    auto words = utils::parse_words(utils::trim(line));
     std::map<std::string, std::string> map;
     for (size_t i = 1; i < words.size(); i++) {
       if (words[i].empty())
