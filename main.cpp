@@ -196,10 +196,8 @@ FntFile read_fnt(const std::string &filepath) {
       const int xoffset = std::stoi(map["xoffset"]);
       const int yoffset = std::stoi(map["yoffset"]);
       const int xadvance = std::stoi(map["xadvance"]);
-      const int page = std::stoi(map["page"]);
-      const int chnl = std::stoi(map["chnl"]);
-      (void)page;
-      (void)chnl;
+      //const int page = std::stoi(map["page"]);
+      //const int chnl = std::stoi(map["chnl"]);
 
       // Skip weird chars
       if (id > 126 || id < 32)
