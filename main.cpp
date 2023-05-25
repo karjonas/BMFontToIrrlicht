@@ -240,9 +240,7 @@ void write_xml(const std::string &input, const std::string &output,
   }
 
   const std::string src_image_path =
-      std::string(std::filesystem::path(input).parent_path().c_str()) + "/" +
-      fnt.image_file;
-
+      std::string(std::filesystem::path(input).parent_path() / fnt.image_file);
   const std::string dst_image_name =
       std::string(std::filesystem::path(output).stem()) + "_irr.png";
   const std::string dst_image_path =
